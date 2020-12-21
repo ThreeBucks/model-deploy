@@ -19,7 +19,7 @@ environments:
 models:
   - name: oilpaint-tf-serving  # 模型名称, 与上面环境变量的host部分一致(请不要使用下划线作为分割符,使用`-`)
     replicas: 2  # 部署的实例数量,最少为2.根据gpu的使用进行配置,一般使每个gpu的利用率保持在70%左右为最优
-    docker_image: harbor.bigo.sg/bigo_ai/icpm/content/comics/models/tensorflow_serving_gpu_oilpaint_mmpro:latest  # 模型的docker镜像名称
+    docker_image: baijialuo/model-deploy-model-demo:latest  # 模型的docker镜像名称
     port: 8500  # 端口号, 与推理引擎的默认端口号一致.(tf-serving grpc:8500;tf-serving http:8501; MMS http:8080; triton grpc:8001; triton http:8000)
 
 ### 集群配置

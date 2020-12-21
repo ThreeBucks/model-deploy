@@ -2,7 +2,7 @@
 
 set -x
 
-BASE_IMAGE=harbor.bigo.sg/bigo_ai/nvidia/trtserver:git20.06.eb0855f7
+BASE_IMAGE=baijialuo/model-deploy-trtserver:git20.06
 REPO=harbor.bigo.sg/bigo_ai/icpm
 
 IMAGE_NAME=${REPO}/content/common/models/trtserver_pytorch_example:latest

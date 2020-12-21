@@ -1,4 +1,4 @@
-FROM harbor.bigo.sg/bigo_ai/icpm/content/auto-deploy-base:latest
+FROM baijialuo/model-deploy-base:latest
 
 COPY tools /tools
 
