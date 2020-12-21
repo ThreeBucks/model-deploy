@@ -1,0 +1,29 @@
+### Global
+# 项目名称, 严禁与其他项目名称相同(请不要使用下划线作为分割符,使用`-`)
+project_name: auto-deploy
+
+
+### CGI实例
+# 部署的实例数量,最少为2.计算公式: rps / (qps * 70%)
+# 其中rps为预估的每秒钟的请求数的峰值,qps为测试出来的项目最大qps(可使用scripts/benchmark.py进行测试)
+replicas: 2  # 实例数量
+cpu: 4  # cpu核数量/replicas (每台机器有32个核, 最多分配30个核, 按需分配, 不是高qps的计算密集型的服务无需修改)
+memory: 8  # 内存(G)/replicas (每台机器有128G内存, 最多分配100G, 按需分配, 不是高内存占用的服务无需修改)
+# 环境变量
+environments:
+  - name: OILPAINT_TF_SERVING_HOST  # 与推理client设置的名称一致
+    value: oilpaint-tf-serving:8500  # host和port部分分别与下面models的对应项一致
+
+### Models serving实例
+# 每个镜像都需要设置一项(对于ensemble了多个模型的镜像,只需要设置一个即可)
+models:
+  - name: oilpaint-tf-serving  # 模型名称, 与上面环境变量的host部分一致(请不要使用下划线作为分割符,使用`-`)
+    replicas: 2  # 部署的实例数量,最少为2.根据gpu的使用进行配置,一般使每个gpu的利用率保持在70%左右为最优
+    docker_image: harbor.bigo.sg/bigo_ai/icpm/content/comics/models/tensorflow_serving_gpu_oilpaint_mmpro:latest  # 模型的docker镜像名称
+    port: 8500  # 端口号, 与推理引擎的默认端口号一致.(tf-serving grpc:8500;tf-serving http:8501; MMS http:8080; triton grpc:8001; triton http:8000)
+
+### 集群配置
+# 选择使用的机器, 服务会落到打相应label的机器上, 一般无需设置
+# use_labels:
+#   - key: image-graphics
+#     value: "true"

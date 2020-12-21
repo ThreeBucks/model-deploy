@@ -1,0 +1,17 @@
+# success
+SUCCESS = 200
+
+# common
+ERR_INVALID_ARGS = 2
+ERR_CDN = 3
+ERR_SYSTEM = -1
+ERR_OVERLOAD = -2
+
+# face related
+NO_FACE = 201
+FACE_TOO_LARGE = 202
+FACE_TOO_SMALL = 203
+FACE_NOT_CENTER = 204
+
+# quality related
+QUALITY_TOO_LOW = 301

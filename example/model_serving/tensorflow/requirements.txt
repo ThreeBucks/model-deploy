@@ -1,0 +1,6 @@
+opencv-python
+tensorflow==1.14
+tensorflow-serving-api==1.14
+numpy
+grpcio==1.25 --no-binary grpcio
+grpcio-tools==1.25

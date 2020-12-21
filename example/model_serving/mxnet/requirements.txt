@@ -1,0 +1,3 @@
+mxnet-cu100mkl
+multi-model-server
+opencv-python

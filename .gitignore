@@ -1,0 +1,7 @@
+__pycache__
+.history
+.vscode
+
+deploy/deploy-grey.yaml
+deploy/deploy-production.yaml
+deploy/models_tag_info.txt

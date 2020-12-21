@@ -1,0 +1,9 @@
+FROM nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04
+
+RUN apt update && apt install -y python3.6 python3-pip
+
+COPY requirements.txt /evg-ml-auto-deploy/requirements.txt
+
+RUN pip3 install --upgrade pip
+RUN pip install --no-cache -r /evg-ml-auto-deploy/requirements.txt
+RUN ln -s /usr/bin/python3 /usr/bin/python
