@@ -1,31 +1,13 @@
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
   GIT_STRATEGY: fetch
-  IMAGE_TAG_NAME: "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+  IMAGE_TAG_NAME: "${HARBOR_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
 
 stages:
-  - compile
   - build
-  - grey
-  - stop_grey
+  - gray
+  # - stop_gray
   - production
-
-compiler_config:
-  stage: compile
-  image: python:3.6
-  script:
-    - python -m pip install pyyaml
-    - cd deploy && python generater.py
-    - env | grep IMAGE
-    - sed -i "s#__IMAGE__#${IMAGE_TAG_NAME}#" deploy-grey.yaml deploy-grey.yaml
-    - sed -i "s#__IMAGE__#${IMAGE_TAG_NAME}#" deploy-production.yaml deploy-production.yaml
-
-  artifacts:
-    paths:
-    - deploy/deploy-grey.yaml
-    - deploy/deploy-production.yaml
-    - deploy/models_tag_info.txt
-    expire_in: 4 week
 
 build_image:
   stage: build
@@ -41,46 +23,58 @@ build_image:
   script:
     # - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@git.sysop.bigo.sg/".insteadOf "../../"  # for submodule
     # - git submodule sync && git submodule update --init  # for submodule
-    - apk update && apk add bash
-    - docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD"
+    - docker login "$HARBOR_REGISTRY" -u "$HARBOR_REGISTRY_USER" -p "$HARBOR_REGISTRY_PASSWORD"
     - docker build --pull -f docker/Dockerfile -t "$IMAGE_TAG_NAME" .
     - docker push "$IMAGE_TAG_NAME"
     - docker rmi "$IMAGE_TAG_NAME"
-    - bash deploy/tag_models.sh
 
-grey:
-  stage: grey
+compiler_config:
+  stage: build
+  image: python:3.6
+  script:
+    - python -m pip install pyyaml
+    - cd deploy && python generater.py
+    - env | grep IMAGE
+    - sed -i "s#__IMAGE__#${IMAGE_TAG_NAME}#" deploy-gray.yaml deploy-gray.yaml
+    - sed -i "s#__IMAGE__#${IMAGE_TAG_NAME}#" deploy-production.yaml deploy-production.yaml
+
+  artifacts:
+    paths:
+    - deploy/deploy-gray.yaml
+    - deploy/deploy-production.yaml
+    expire_in: 4 week
+
+gray:
+  stage: gray
   image: cnych/kubectl
   variables:
     GIT_STRATEGY: none
   environment:
-    name: sg
-    on_stop: stop_grey
+    name: gray-sean
+    # on_stop: stop_gray
   when: manual
   script:
     - kubectl config get-contexts
-    - kubectl apply -f deploy/deploy-grey.yaml
+    - kubectl apply -f deploy/deploy-gray.yaml
 
-stop_grey:
-  image: cnych/kubectl
-  stage: stop_grey
-  variables:
-    GIT_STRATEGY: none
-  when: manual
-  environment:
-    name: sg
-    action: stop
-  script:
-    - kubectl config get-contexts
-    - kubectl delete -f deploy/deploy-grey.yaml
+# stop_gray:
+#   image: cnych/kubectl
+#   stage: stop_gray
+#   variables:
+#     GIT_STRATEGY: none
+#   when: manual
+#   environment:
+#     name: gray-sean
+#     action: stop
+#   script:
+#     - kubectl config get-contexts
+#     - kubectl delete -f deploy/deploy-gray.yaml
 
-deploy-sg:
+deploy-hk:
   image: cnych/kubectl
   stage: production
   variables:
     GIT_STRATEGY: none
-  environment:
-    name: sg
   script:
     - kubectl config get-contexts
     - kubectl apply -f deploy/deploy-production.yaml

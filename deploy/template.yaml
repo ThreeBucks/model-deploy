@@ -2,19 +2,19 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: content-auto-deploy
+  name: auto-deploy
   labels:
-    app: content-auto-deploy
+    app: auto-deploy
     istio-injection: enabled
   annotations:
-    field.cattle.io/projectId: c-f8rw4:p-7s2gb
+    field.cattle.io/projectId: c-r89km:p-ltprd
 ---
 # auto-deploy cgi deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: auto-deploy-cgi
-  namespace: content-auto-deploy
+  namespace: auto-deploy
 spec:
   replicas: 2
   selector:
@@ -30,42 +30,28 @@ spec:
     metadata:
       labels:
         app: auto-deploy-cgi
+        logging: "true"
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: evg-content
-                operator: In
-                values:
-                - "true"
-      restartPolicy: Always
-      imagePullSecrets:
-      - name: harbor
-      terminationGracePeriodSeconds: 3
       containers:
       - name: auto-deploy-cgi
         image: __IMAGE__
         imagePullPolicy: Always
         resources:
           limits:
-            cpu: 4
-            memory: 12Gi
+            # memory: "65536Mi"
+            # cpu: "32000m"
         ports:
         - containerPort: 80
         command:
         - gunicorn
         - server:app
-        - -t
-        - "120"
         - -b
         - 0.0.0.0:80
         - -w
-        - "32"
+        - "12"
         livenessProbe:
           httpGet:
-            path: /api/ping
+            path: /auto-deploy/ping
             port: 80
           initialDelaySeconds: 120
           timeoutSeconds: 20
@@ -75,8 +61,6 @@ spec:
             name: monitor-alarm
           - mountPath: /tmp
             name: monitor-alarm-tmp
-          - mountPath: /data/corefiles
-            name: corefiles
       volumes:
         - name: monitor-alarm
           hostPath:
@@ -84,16 +68,15 @@ spec:
         - name: monitor-alarm-tmp
           hostPath:
             path: /tmp
-        - name: corefiles
-          hostPath:
-            path: /data/corefiles
+      imagePullSecrets:
+      - name: bigo-harbor-registry
 ---
 # auto-deploy cgi service
 apiVersion: v1
 kind: Service
 metadata:
   name: auto-deploy-cgi
-  namespace: content-auto-deploy
+  namespace: auto-deploy
 spec:
   selector:
     app: auto-deploy-cgi
@@ -101,14 +84,14 @@ spec:
   - name: http-auto-deploy-cgi
     port: 80
     targetPort: 80
-  type: ClusterIP
+  type: NodePort
 ---
 # tf-serving model deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: oilpaint-tf-serving
-  namespace: content-auto-deploy
+  namespace: auto-deploy
 spec:
   replicas: 2
   selector:
@@ -125,44 +108,28 @@ spec:
       labels:
         app: oilpaint-tf-serving
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: evg-content
-                operator: In
-                values:
-                - "true"
-      restartPolicy: Always
-      imagePullSecrets:
-      - name: harbor
       containers:
       - name: oilpaint-tf-serving
         image: harbor.bigo.sg/bigo_ai/icpm/content/comics/models/tensorflow_serving_gpu_oilpaint_mmpro:latest
         imagePullPolicy: Always
         resources:
           limits:
-          #   nvidia.com/gpu: "1"
-          # requests:
-          #   nvidia.com/gpu: "1"
-            aliyun.com/gpu-mem: 10
+            # memory: "65536Mi"
+            # cpu: "32000m"
+            nvidia.com/gpu: "1"
+          requests:
+            nvidia.com/gpu: "1"
         ports:
         - containerPort: 8500
-        volumeMounts:
-          - mountPath: /data/corefiles
-            name: corefiles
-      volumes:
-        - name: corefiles
-          hostPath:
-            path: /data/corefiles
+      imagePullSecrets:
+        - name: bigo-harbor-registry
 ---
 # tf-serving model service
 apiVersion: v1
 kind: Service
 metadata:
   name: oilpaint-tf-serving
-  namespace: content-auto-deploy
+  namespace: auto-deploy
 spec:
   selector:
     app: oilpaint-tf-serving
@@ -170,49 +137,22 @@ spec:
   - name: grpc-oilpaint-tf-serving
     port: 8500
     targetPort: 8500
-  type: ClusterIP
+  type: NodePort
 ---
-apiVersion: networking.istio.io/v1alpha3
-kind: Gateway
+# auto-deploy ingress
+apiVersion: extensions/v1beta1
+kind: Ingress
 metadata:
-  name: http-gateway
-  namespace: content-auto-deploy
+  name: evg-ml.bigo.sg-auto-deploy
+  namespace: auto-deploy
+  # annotations:
+  #   nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
-  selector:
-    istio: ingressgateway # use Istio default gateway implementation
-  servers:
-  - port:
-      number: 80
-      name: http
-      protocol: HTTP
-    hosts: ["*"]
----
-# auto-deploy virtual service
-apiVersion: networking.istio.io/v1alpha3
-kind: VirtualService
-metadata:
-  name: auto-deploy
-  namespace: content-auto-deploy
-spec:
-  hosts:
-    - "*"
-  gateways:
-    - http-gateway
-  http:
-  - match:
-    - uri:
-        prefix: /api/grey/content/auto-deploy
-    rewrite:
-      uri: /api/content/auto-deploy
-    route:
-    - destination:
-        host: auto-deploy-cgi
----
-# auto-deploy destination rule
-apiVersion: networking.istio.io/v1alpha3
-kind: DestinationRule
-metadata:
-  name: auto-deploy
-  namespace: content-auto-deploy
-spec:
-  host: auto-deploy-cgi
+  rules:
+  - host: evg-ml.bigo.sg
+    http:
+      paths:
+      - path: /auto-deploy
+        backend:
+          serviceName: auto-deploy-cgi
+          servicePort: 80

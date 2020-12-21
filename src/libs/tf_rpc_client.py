@@ -41,7 +41,7 @@ if __name__ == '__main__':
     import pdb
     import time
 
-    rpc = TfRpcClient('10.221.68.62:30368', 'Oilpaint_mmpro')
+    rpc = TfRpcClient('164.90.89.157:30994', 'Oilpaint_mmpro')
     img = cv2.imread('assets/user.jpg')
     template = cv2.imread('assets/template.png')
     img = cv2.resize(img, (256, 256))

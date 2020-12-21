@@ -16,13 +16,14 @@ logger = logging.getLogger(__name__)
 class Engine:
     def __init__(self):
         self.model_dict = models_info.models_info
-        self.oilpaint = {id:Oilpaint(model) for id,model in self.model_dict.items()}
 
 
     def run(self, user_image, template_image, model_id):
         try:
+            oilpaint = None
             # run oilpaint core
-            err_code, res = self.oilpaint[model_id].run(user_image, template_image)
+            oilpaint = Oilpaint(self.model_dict[model_id])
+            err_code, res = oilpaint.run(user_image, template_image)
         except Exception as err:
             logger.error('Oilpaint run failed. ERROR: {}'.format(err))
             traceback.print_exc()

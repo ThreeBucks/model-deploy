@@ -1,6 +1,0 @@
-numpy
-opencv-python
-requests
-tools/tritonclientutils-2.0.0-py3-none-any.whl
-tools/tritongrpcclient-2.0.0-py3-none-any.whl
-tools/tritonhttpclient-2.0.0-py3-none-any.whl

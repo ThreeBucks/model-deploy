@@ -1,7 +1,0 @@
-ARG BASE_IMAGE
-
-FROM ${BASE_IMAGE}
-
-ARG MODEL_NAME
-
-COPY ${MODEL_NAME}.mar /opt/ml/model/${MODEL_NAME}.mar

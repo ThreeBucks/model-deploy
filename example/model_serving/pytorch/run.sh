@@ -1,1 +1,0 @@
-nvidia-docker run --gpus '"device=0"' -p 8000:8000 -p 8001:8001 -dit --rm --shm-size=1g --ulimit memlock=-1 --ulimit stack=67108864 -t harbor.bigo.sg/bigo_ai/icpm/content/common/models/trtserver_pytorch_example:latest
